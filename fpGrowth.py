@@ -21,7 +21,7 @@ class treeNode:
 
 #構建FP-tree
 def createTree(dataSet, minSup=1):  #parm dataset 是 {frozenset(items) : 數量}
-    headerTable = {}
+    headerTable = {}  # headerTable is {item : [cnt, ptr]}
     for trans in dataSet:  #第一次遍歷：統計各個數據的頻繁度  #做出headerTable  #trans是frozenset( item )
         for item in trans:
             headerTable[item] = headerTable.get(item, 0) + dataSet[trans]  #一開始是存數字 #dataSet[trans]代表item的數量
@@ -42,7 +42,7 @@ def createTree(dataSet, minSup=1):  #parm dataset 是 {frozenset(items) : 數量
         localD = {}
         for item in tranSet:  # put transaction items in order
             if item in freqItemSet:#只對頻繁項集進行排序
-                localD[item] = headerTable[item][0]  #localD[item]=數量
+                localD[item] = headerTable[item][0]  #localD is {item : 數量}  headerTable is {item : [數量, ptr]}
 
         #使用排序後的頻率項集對樹進行填充
         if len(localD) > 0:
@@ -73,12 +73,10 @@ def updateHeader(nodeToTest, targetNode):
 
 
 def loadSimpDat():
-    simpDat = [['r', 'z', 'h', 'j', 'p'],
-               ['z', 'y', 'x', 'w', 'v', 'u', 't', 's'],
-               ['z'],
-               ['r', 'x', 'n', 'o', 's'],
-               ['y', 'r', 'x', 'z', 'q', 't', 'p'],
-               ['y', 'z', 'x', 'e', 'q', 's', 't', 'm']]
+    simpDat =  [['A', 'B', 'C', 'D'],
+                ['B', 'C', 'E'],
+                ['A', 'B', 'C', 'E'],
+                ['B']]
     return simpDat
 
 #createInitSet() 用於實現上述從列表到字典的類型轉換過程
@@ -108,13 +106,36 @@ def findPrefixPath(treeNode):  #參數:節點  #return a [{frozenset() : 數量}
 #遞歸查找頻繁項集
 def mineTree(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 set()  #freqItemList:out
     # 頭指針表中的元素項按照頻繁度排序,從小到大
-    bigL = [v[0] for v in sorted(headerTable.items(), key=lambda p: str(p[1]))]  #bigL是所有headerTable的item出現次數小到大
+    bigL = [v[0] for v in sorted(headerTable.items(), key=lambda p: (p[1][0]))]  #bigL是所有headerTable的item依出現次數小到大
     for basePat in bigL:  #從底層開始
         #加入頻繁項列表
         newFreqSet = preFix.copy()
         newFreqSet.add(basePat)
-        print ('finalFrequent Item: ',newFreqSet)
+        #print ('finalFrequent Item: ',newFreqSet)
         freqItemList.append(newFreqSet)
+        #遞歸調用函數來創建基
+        condPattBases = findPrefixPath(headerTable[basePat][1])  #condPattBases is a dataSet 
+        #print ('condPattBases :',basePat, condPattBases)
+
+        #2. 構建條件模式Tree
+        myCondTree, myHead = createTree(condPattBases, minSup)  #make a sub tree and a headerTab for basePat
+        #將創建的條件基作為新的數據集添加到fp-tree
+        #print ('head from conditional tree: ', myHead)
+        if myHead != None and len(preFix)<4: #3. 遞歸  #terminate when the subHeaderTab(myHead) is empty
+            #  len(preFix)<4 limit the recursive mineTree
+            #print ('conditional tree for: ',newFreqSet)
+            #myCondTree.disp(1)
+            mineTree(myCondTree, myHead, minSup, newFreqSet, freqItemList)
+
+def mineTreeP(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 set()  #freqItemList:out [item(set), ]
+    # 頭指針表中的元素項按照頻繁度排序,從小到大
+    bigL = {v[0]:v[1][0] for v in sorted(headerTable.items(), key=lambda p: (p[1][0]))}  #bigL是所有headerTable的item依出現次數小到大  bigL is [(item,[cnt,ptr])]
+    for basePat, baseCnt in bigL.items():  #從底層開始
+        #加入頻繁項列表
+        newFreqSet = preFix.copy()
+        newFreqSet.add(basePat)
+        print ('finalFrequent Item: ',newFreqSet)
+        freqItemList.update({frozenset(newFreqSet):baseCnt})  #freqItemList.append(newFreqSet)
         #遞歸調用函數來創建基
         condPattBases = findPrefixPath(headerTable[basePat][1])  #condPattBases is a dataSet 
         print ('condPattBases :',basePat, condPattBases)
@@ -123,8 +144,8 @@ def mineTree(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 se
         myCondTree, myHead = createTree(condPattBases, minSup)  #make a sub tree and a headerTab for basePat
         #將創建的條件基作為新的數據集添加到fp-tree
         print ('head from conditional tree: ', myHead)
-        if myHead != None: #3. 遞歸  #terminate when the subHeaderTab(myHead) is empty
+        if myHead != None and len(preFix)<4: #3. 遞歸  #terminate when the subHeaderTab(myHead) is empty
+            #  len(preFix)<4 limits the recursive mineTree
             print ('conditional tree for: ',newFreqSet)
             myCondTree.disp(1)
-            mineTree(myCondTree, myHead, minSup, newFreqSet, freqItemList)
-
+            mineTreeP(myCondTree, myHead, minSup, newFreqSet, freqItemList)
