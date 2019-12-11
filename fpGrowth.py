@@ -89,41 +89,41 @@ def createInitSet(dataSet):  #parm dataset is list[list[]]
     return retDict  # retDict is {frozenset() : 1}
 
 #從FP樹中發現頻繁項集
-def ascendTree(leafNode, prefixPath):  #遞歸上溯整棵樹
+def ascendTree(leafNode, prefixPath):  #遞歸上溯整棵樹  #prefixPath:out
     if leafNode.parent != None:
         prefixPath.append(leafNode.name)
         ascendTree(leafNode.parent, prefixPath)
 
 
-def findPrefixPath(basePat, treeNode):  #參數：指針，節點；
+def findPrefixPath(treeNode):  #參數:節點  #return a [{frozenset() : 數量}](dataSet)
     condPats = {}
     while treeNode != None:
         prefixPath = []
         ascendTree(treeNode, prefixPath)#尋找當前非空節點的前綴
         if len(prefixPath) > 1:
-            condPats[frozenset(prefixPath[1:])] = treeNode.count #將條件模式基添加到字典中
-        treeNode = treeNode.nodeLink
-    return condPats
+            condPats[frozenset(prefixPath[1:])] = treeNode.count  #建構排除自己的dataSet
+        treeNode = treeNode.nodeLink  #相同item的旁系節點
+    return condPats  #return a [{frozenset() : 數量}]
 
 #遞歸查找頻繁項集
-def mineTree(inTree, headerTable, minSup, preFix, freqItemList):
+def mineTree(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 set()  #freqItemList:out
     # 頭指針表中的元素項按照頻繁度排序,從小到大
-    bigL = [v[0] for v in sorted(headerTable.items(), key=lambda p: str(p[1]))]#python3修改
+    bigL = [v[0] for v in sorted(headerTable.items(), key=lambda p: str(p[1]))]  #bigL是所有headerTable的item出現次數小到大
     for basePat in bigL:  #從底層開始
         #加入頻繁項列表
         newFreqSet = preFix.copy()
         newFreqSet.add(basePat)
-        #print ('finalFrequent Item: ',newFreqSet)
+        print ('finalFrequent Item: ',newFreqSet)
         freqItemList.append(newFreqSet)
         #遞歸調用函數來創建基
-        condPattBases = findPrefixPath(basePat, headerTable[basePat][1])
+        condPattBases = findPrefixPath(headerTable[basePat][1])  #condPattBases is a dataSet 
         print ('condPattBases :',basePat, condPattBases)
 
         #2. 構建條件模式Tree
-        myCondTree, myHead = createTree(condPattBases, minSup)
+        myCondTree, myHead = createTree(condPattBases, minSup)  #make a sub tree and a headerTab for basePat
         #將創建的條件基作為新的數據集添加到fp-tree
         print ('head from conditional tree: ', myHead)
-        if myHead != None: #3. 遞歸
+        if myHead != None: #3. 遞歸  #terminate when the subHeaderTab(myHead) is empty
             print ('conditional tree for: ',newFreqSet)
             myCondTree.disp(1)
             mineTree(myCondTree, myHead, minSup, newFreqSet, freqItemList)
