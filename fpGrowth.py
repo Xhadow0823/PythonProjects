@@ -46,7 +46,7 @@ def createTree(dataSet, minSup=1):  #parm dataset 是 {frozenset(items) : 數量
 
         #使用排序後的頻率項集對樹進行填充
         if len(localD) > 0:
-            orderedItems = [v[0] for v in sorted(localD.items(), key=lambda p: p[1], reverse=True)]  #  WATCHOUT!!!
+            orderedItems = [v[0] for v in sorted(localD.items(), key=lambda p: (p[1],int(p[0])), reverse=True)]  #  WATCHOUT!!!!!!!!!!
             updateTree(orderedItems, retTree, headerTable, count)  # populate tree with ordered freq itemset
             #         (items,        inTree,  headerTable, count)
     return retTree, headerTable  #返回樹和頭指針表
@@ -126,6 +126,28 @@ def mineTree(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 se
             #print ('conditional tree for: ',newFreqSet)
             #myCondTree.disp(1)
             mineTree(myCondTree, myHead, minSup, newFreqSet, freqItemList)
+
+def mineTree2(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 set()  #freqItemList:out [item(set), ]
+    # 頭指針表中的元素項按照頻繁度排序,從小到大
+    bigL = {v[0]:v[1][0] for v in sorted(headerTable.items(), key=lambda p: (p[1][0]))}  #bigL是所有headerTable的item依出現次數小到大  bigL is [(item,[cnt,ptr])]
+    for basePat, baseCnt in bigL.items():  #從底層開始
+        #加入頻繁項列表
+        newFreqSet = preFix.copy()
+        newFreqSet.add(basePat)
+        #print ('finalFrequent Item: ',newFreqSet)
+        freqItemList.update({frozenset(newFreqSet):baseCnt})  #freqItemList.append(newFreqSet)
+        #遞歸調用函數來創建基
+        condPattBases = findPrefixPath(headerTable[basePat][1])  #condPattBases is a dataSet 
+        #print ('condPattBases :',basePat, condPattBases)
+        #2. 構建條件模式Tree
+        myCondTree, myHead = createTree(condPattBases, minSup)  #make a sub tree and a headerTab for basePat
+        #將創建的條件基作為新的數據集添加到fp-tree
+        #print ('head from conditional tree: ', myHead)
+        if myHead != None and len(preFix)<4: #3. 遞歸  #terminate when the subHeaderTab(myHead) is empty
+            #  len(preFix)<4 limits the recursive mineTree
+            #print ('conditional tree for: ',newFreqSet)
+            #myCondTree.disp(1)
+            mineTree2(myCondTree, myHead, minSup, newFreqSet, freqItemList)
 
 def mineTreeP(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 set()  #freqItemList:out [item(set), ]
     # 頭指針表中的元素項按照頻繁度排序,從小到大
