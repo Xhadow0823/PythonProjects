@@ -171,3 +171,15 @@ def mineTreeP(inTree, headerTable, minSup, preFix, freqItemList):  #preFix 是 s
             print ('conditional tree for: ',newFreqSet)
             myCondTree.disp(1)
             mineTreeP(myCondTree, myHead, minSup, newFreqSet, freqItemList)
+
+#計算所有Association Rules
+def AllAssRul(freqSet):
+    import itertools as its
+    ar=0
+    for item in freqSet.keys():
+        for r in range(1,len(item)):
+            for a in its.combinations(item,r):
+                if freqSet[frozenset(item)]/freqSet[frozenset(a)] >= 0.8:
+                    #print(set(a), '=>', item-set(a),':', freqSet[frozenset(item)]/freqSet[frozenset(a)])
+                    ar+=1
+    return ar
