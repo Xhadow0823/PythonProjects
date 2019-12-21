@@ -38,7 +38,7 @@ def createTree(dataSet, minSup=1):  #parm dataset 是 {frozenset(items) : 數量
             if item in freqItemSet:#只對頻繁項集進行排序
                 localD[item] = headerTable[item][0]  #localD is {item : 數量}  headerTable is {item : [數量, ptr]}
         if len(localD) > 0:
-            orderedItems = [v[0] for v in sorted(localD.items(), key=lambda p: (p[1],int(p[0])), reverse=True)]  #  WATCHOUT!!!!!!!!!!
+            orderedItems = [v[0] for v in sorted(localD.items(), key=lambda p: (p[1],int(p[0])), reverse=True)]  #  IMPORTANT
             updateTree(orderedItems, retTree, headerTable, count)  # populate tree with ordered freq itemset
             #         (items,        inTree,  headerTable, count)
     return retTree, headerTable  #返回樹和頭指針表
